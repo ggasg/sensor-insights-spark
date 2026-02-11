@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="sbt: com.ibm.icu:icu4j:76.1:jar" type="java-imported" external-system-id="SBT">
+    <properties groupId="com.ibm.icu" artifactId="icu4j" version="76.1" baseVersion="76.1" />
+    <CLASSES>
+      <root url="jar://$USER_HOME$/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/ibm/icu/icu4j/76.1/icu4j-76.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/ibm/icu/icu4j/76.1/icu4j-76.1-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

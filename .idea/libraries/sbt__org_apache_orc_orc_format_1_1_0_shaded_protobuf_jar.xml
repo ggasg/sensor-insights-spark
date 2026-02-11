@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="sbt: org.apache.orc:orc-format:1.1.0:shaded-protobuf:jar" type="java-imported" external-system-id="SBT">
+    <properties groupId="org.apache.orc" artifactId="orc-format" version="1.1.0" baseVersion="1.1.0" />
+    <CLASSES>
+      <root url="jar://$USER_HOME$/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/apache/orc/orc-format/1.1.0/orc-format-1.1.0-shaded-protobuf.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

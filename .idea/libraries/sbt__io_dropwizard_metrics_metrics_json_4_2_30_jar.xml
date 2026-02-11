@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="sbt: io.dropwizard.metrics:metrics-json:4.2.30:jar" type="java-imported" external-system-id="SBT">
+    <properties groupId="io.dropwizard.metrics" artifactId="metrics-json" version="4.2.30" baseVersion="4.2.30" />
+    <CLASSES>
+      <root url="jar://$USER_HOME$/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/io/dropwizard/metrics/metrics-json/4.2.30/metrics-json-4.2.30.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/io/dropwizard/metrics/metrics-json/4.2.30/metrics-json-4.2.30-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

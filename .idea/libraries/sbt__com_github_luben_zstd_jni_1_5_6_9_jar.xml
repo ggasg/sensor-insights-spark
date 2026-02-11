@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="sbt: com.github.luben:zstd-jni:1.5.6-9:jar" type="java-imported" external-system-id="SBT">
+    <properties groupId="com.github.luben" artifactId="zstd-jni" version="1.5.6-9" baseVersion="1.5.6-9" />
+    <CLASSES>
+      <root url="jar://$USER_HOME$/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/github/luben/zstd-jni/1.5.6-9/zstd-jni-1.5.6-9.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/github/luben/zstd-jni/1.5.6-9/zstd-jni-1.5.6-9-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

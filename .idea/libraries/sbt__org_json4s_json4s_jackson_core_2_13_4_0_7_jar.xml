@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="sbt: org.json4s:json4s-jackson-core_2.13:4.0.7:jar" type="java-imported" external-system-id="SBT">
+    <properties groupId="org.json4s" artifactId="json4s-jackson-core_2.13" version="4.0.7" baseVersion="4.0.7" />
+    <CLASSES>
+      <root url="jar://$USER_HOME$/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/json4s/json4s-jackson-core_2.13/4.0.7/json4s-jackson-core_2.13-4.0.7.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/json4s/json4s-jackson-core_2.13/4.0.7/json4s-jackson-core_2.13-4.0.7-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

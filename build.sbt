@@ -19,6 +19,7 @@ libraryDependencies ++= Seq(
   // logging
   "org.apache.logging.log4j" % "log4j-api" % log4jVersion,
   "org.apache.logging.log4j" % "log4j-core" % log4jVersion,
+  "org.apache.logging.log4j" % "log4j-slf4j2-impl" % log4jVersion,
   // Delta Lake
   "io.delta" %% "delta-spark" % deltaLakeVersion,
   // streaming-kafka

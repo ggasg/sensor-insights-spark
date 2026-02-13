@@ -40,6 +40,7 @@
     <orderEntry type="library" name="sbt: org.apache.spark:spark-sql_2.13:4.0.0:jar" level="project" />
     <orderEntry type="library" name="sbt: org.apache.logging.log4j:log4j-api:2.25.3:jar" level="project" />
     <orderEntry type="library" name="sbt: org.apache.logging.log4j:log4j-core:2.25.3:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.apache.logging.log4j:log4j-slf4j2-impl:2.25.3:jar" level="project" />
     <orderEntry type="library" name="sbt: io.delta:delta-spark_2.13:4.0.0:jar" level="project" />
     <orderEntry type="library" name="sbt: org.apache.spark:spark-sql-kafka-0-10_2.13:4.0.0:jar" level="project" />
     <orderEntry type="library" name="sbt: org.apache.spark:spark-streaming-kafka-0-10_2.13:4.0.0:jar" level="project" />
@@ -127,7 +128,6 @@
     <orderEntry type="library" name="sbt: oro:oro:2.0.8:jar" level="project" />
     <orderEntry type="library" name="sbt: org.slf4j:jul-to-slf4j:2.0.16:jar" level="project" />
     <orderEntry type="library" name="sbt: org.slf4j:jcl-over-slf4j:2.0.16:jar" level="project" />
-    <orderEntry type="library" name="sbt: org.apache.logging.log4j:log4j-slf4j2-impl:2.24.3:jar" level="project" />
     <orderEntry type="library" name="sbt: org.apache.logging.log4j:log4j-1.2-api:2.24.3:jar" level="project" />
     <orderEntry type="library" name="sbt: org.apache.logging.log4j:log4j-layout-template-json:2.24.3:jar" level="project" />
     <orderEntry type="library" name="sbt: org.apache.curator:curator-framework:5.7.1:jar" level="project" />
@@ -186,7 +186,7 @@
     <orderEntry type="library" name="sbt: org.apache.orc:orc-shims:2.1.2:jar" level="project" />
     <orderEntry type="library" name="sbt: io.airlift:aircompressor:2.0.2:jar" level="project" />
     <orderEntry type="library" name="sbt: org.jetbrains:annotations:17.0.0:jar" level="project" />
-    <orderEntry type="library" name="sbt: org.slf4j:slf4j-api:2.0.16:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.slf4j:slf4j-api:2.0.17:jar" level="project" />
     <orderEntry type="library" name="sbt: org.threeten:threeten-extra:1.8.0:jar" level="project" />
     <orderEntry type="library" name="sbt: org.apache.orc:orc-mapreduce:2.1.2:shaded-protobuf:jar" level="project" />
     <orderEntry type="library" name="sbt: org.apache.hive:hive-storage-api:2.8.1:jar" level="project" />

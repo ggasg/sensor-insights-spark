@@ -1,6 +1,7 @@
 package com.gaston.iot
 
 import com.typesafe.config.ConfigFactory
+import scala.jdk.CollectionConverters._
 
 object AppConfig {
 
@@ -18,10 +19,19 @@ object AppConfig {
 
   // Spark
   val appName: String = config.getString("spark.app-name")
+  val sparkMaster: String = config.getString("spark.master")
   val checkpointLocation: String = config.getString("spark.checkpoint-location")
 
-  def printConfig(): Unit = {
-    println(s"Kafka Bootstrap: $kafkaBootstrap")
-    println(s"Source: ${if (sys.env.contains("KAFKA_BOOTSTRAP_SERVERS")) "ENV VAR" else "application.conf"}")
+  // Configs
+  def getSparkConfigs: Map[String, String] = {
+    config.getConfig("spark.configs")
+      .entrySet()
+      .asScala
+      .map { entry =>
+        val key = entry.getKey.replace("\"", "")
+        val value = entry.getValue.unwrapped().toString
+        key -> value
+      }
+      .toMap
   }
 }

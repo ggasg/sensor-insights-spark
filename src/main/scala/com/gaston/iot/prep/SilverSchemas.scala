@@ -1,4 +1,4 @@
-package com.gaston.iot
+package com.gaston.iot.prep
 
 import org.apache.spark.sql.types._
 
@@ -19,9 +19,9 @@ object SilverSchemas {
 
   val readingSchema: StructType = StructType(Seq(
     StructField("chip_id", IntegerType, nullable = true),
-    StructField("altitude", FloatType, nullable = true),
-    StructField("pressure", FloatType, nullable = true),
-    StructField("temperature", ArrayType(StringType), nullable = true),
+    StructField("altitude", LongType, nullable = true),
+    StructField("pressure", LongType, nullable = true),
+    StructField("temperature", ArrayType(LongType), nullable = true),
     StructField("location", StringType, nullable = true)
   ))
 

@@ -1,5 +1,6 @@
 package com.gaston.iot
 
+import com.gaston.iot.prep.JobProcessing
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 

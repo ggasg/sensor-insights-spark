@@ -1,6 +1,7 @@
-package com.gaston.iot
+package com.gaston.iot.config
 
 import com.typesafe.config.ConfigFactory
+
 import scala.jdk.CollectionConverters._
 
 object AppConfig {

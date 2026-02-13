@@ -1,5 +1,6 @@
 package com.gaston.iot
 
+import com.gaston.iot.config.AppConfig
 import org.apache.spark.sql.SparkSession
 import org.scalatest.{BeforeAndAfterAll, Suite}
 

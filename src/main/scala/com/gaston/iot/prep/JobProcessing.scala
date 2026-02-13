@@ -1,13 +1,11 @@
-package com.gaston.iot
+package com.gaston.iot.prep
 
-import com.gaston.iot.SilverSchemas.{locationSchema, payloadSchema, readingSchema}
+import com.gaston.iot.config.AppConfig
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.streaming.{StreamingQuery, Trigger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.sql.expressions.Window
-import org.apache.spark.sql.functions.{avg, col, element_at, expr, from_json, lit, to_timestamp, window}
-import org.apache.spark.sql.streaming.StreamingQuery
-import org.apache.spark.sql.streaming.Trigger
 
-
+// TODO - Should clean up way of setting checkpoint locations. Use AnomalyDetection as reference
 class JobProcessing(sparkSession: SparkSession) {
 
   val KAFKA_OPTIONS: Map[String, String] = Map(
@@ -37,15 +35,18 @@ class JobProcessing(sparkSession: SparkSession) {
     sparkSession.readStream
       .format("delta")
       .load(bronzeTable)
-      .withColumn("parsed_payload", from_json(col("payload"), payloadSchema))
-      .withColumn("parsed_reading", from_json(col("parsed_payload.reading"), readingSchema))
-      .withColumn("parsed_location", from_json(col("parsed_reading.location"), locationSchema))
+      .withColumn("parsed_payload", from_json(col("payload"), SilverSchemas.payloadSchema))
+      .withColumn("parsed_reading", from_json(col("parsed_payload.reading"), SilverSchemas.readingSchema))
+      .withColumn("parsed_location", from_json(col("parsed_reading.location"), SilverSchemas.locationSchema))
       .select(
-        col("parsed_payload.timestamp").alias("event_timestamp"),
-        col("parsed_reading.chip_id"),
-        col("parsed_reading.altitude"),
-        col("parsed_reading.pressure"),
-        col("parsed_reading.temperature"),
+        (col("parsed_payload.timestamp").cast("long") / 1e9).cast("timestamp").alias("event_timestamp"),
+        col("parsed_reading.chip_id").alias("chip_id"),
+        col("parsed_reading.altitude").cast("double").alias("altitude"),
+        col("parsed_reading.pressure").cast("double").alias("pressure"),
+        array(
+          element_at(col("parsed_reading.temperature"), lit(1)).cast("double"),
+          element_at(col("parsed_reading.temperature"), lit(2)).cast("double")
+        ).alias("temperature"),
         col("parsed_location.*")  // Flatten location fields
       )
   }

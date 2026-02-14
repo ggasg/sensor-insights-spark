@@ -12,9 +12,9 @@ object AnomalyDetection {
 
   private val logger = LoggerFactory.getLogger(getClass)
 
-  private[insight] def detectAnomalies(df: DataFrame): DataFrame = {
+  private[iot] def detectAnomalies(df: DataFrame): DataFrame = {
     // Window with partitioning. Not really in use since there's only one chip id
-    val windowSpec = Window
+    val sensorWindowSpec = Window
       .partitionBy("chip_id")
       .orderBy("event_timestamp")
 
@@ -22,9 +22,9 @@ object AnomalyDetection {
     val features = df
       .withColumn("temp_c", element_at(col("temperature"), lit(1)))
       .withColumn("temp_f", element_at(col("temperature"), lit(1)))
-      .withColumn("prev_temp_c", lag("temp_c", 1).over(windowSpec))
+      .withColumn("prev_temp_c", lag("temp_c", 1).over(sensorWindowSpec))
       .withColumn("temp_change_rate", col("temp_c") - col("prev_temp_c"))
-      .withColumn("pressure_change_rate", col("pressure") - lag("pressure", 1).over(windowSpec))
+      .withColumn("pressure_change_rate", col("pressure") - lag("pressure", 1).over(sensorWindowSpec))
       .na.fill(0.0)
 
     // Assemble
@@ -35,22 +35,24 @@ object AnomalyDetection {
     val featurized = assembler.transform(features)
 
     // Anomaly detection via just plain old stats
+    // Calculate stats - handle nulls properly
     val stats = featurized.select(
       mean("temp_c").alias("mean_temp"),
-      stddev("temp_c").alias("stddev_ temp"),
+      stddev("temp_c").alias("stddev_temp"),
       mean("pressure").alias("mean_pressure"),
       stddev("pressure").alias("stddev_pressure")
     ).first()
 
-    // Smaller batches will have identical values. Standard Dev = 0 so need to avoid div by 0
-    val stddevTemp = if (stats.getDouble(1) == 0.0) 1.0 else stats.getDouble(1)
-    val stddevPressure = if (stats.getDouble(3) == 0.0) 1.0 else stats.getDouble(3)
-
+    // Safe extraction with null handling
+    val meanTemp = if (stats.isNullAt(0)) 0.0 else stats.getDouble(0)
+    val stddevTemp = if (stats.isNullAt(1) || stats.getDouble(1) == 0.0) 1.0 else stats.getDouble(1)
+    val meanPressure = if (stats.isNullAt(2)) 0.0 else stats.getDouble(2)
+    val stddevPressure = if (stats.isNullAt(3) || stats.getDouble(3) == 0.0) 1.0 else stats.getDouble(3)
 
     // Flag values > 3 std devs
     featurized
-      .withColumn("temp_zscore", abs((col("temp_c") - lit(stats.getDouble(0))) / lit(stddevTemp)))
-      .withColumn("pressure_zscore", abs((col("pressure") - lit(stats.getDouble(2))) / lit(stddevPressure)))
+      .withColumn("temp_zscore", abs((col("temp_c") - lit(meanTemp)) / lit(stddevTemp)))
+      .withColumn("pressure_zscore", abs((col("pressure") - lit(meanPressure)) / lit(stddevPressure)))
       .withColumn("is_anomaly",
         when(col("temp_zscore") > 3.0 || col("pressure_zscore") > 3.0, lit(true))
           .otherwise(lit(false))

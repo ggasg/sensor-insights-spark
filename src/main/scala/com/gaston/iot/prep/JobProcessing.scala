@@ -31,11 +31,8 @@ class JobProcessing(sparkSession: SparkSession) {
       .transform(enrichBronze)
   }
 
-  def processSilver(bronzeTable: String): DataFrame = {
-    sparkSession.readStream
-      .format("delta")
-      .load(bronzeTable)
-      .withColumn("parsed_payload", from_json(col("payload"), SilverSchemas.payloadSchema))
+  private[iot] def transformToSilver(df: DataFrame): DataFrame = {
+    df.withColumn("parsed_payload", from_json(col("payload"), SilverSchemas.payloadSchema))
       .withColumn("parsed_reading", from_json(col("parsed_payload.reading"), SilverSchemas.readingSchema))
       .withColumn("parsed_location", from_json(col("parsed_reading.location"), SilverSchemas.locationSchema))
       .select(
@@ -49,6 +46,13 @@ class JobProcessing(sparkSession: SparkSession) {
         ).alias("temperature"),
         col("parsed_location.*")  // Flatten location fields
       )
+  }
+
+  def processSilver(bronzeTable: String): DataFrame = {
+    sparkSession.readStream
+      .format("delta")
+      .load(bronzeTable)
+      .transform(transformToSilver)
   }
 
   private[iot] def computeWindowAverages(df: DataFrame): DataFrame = {

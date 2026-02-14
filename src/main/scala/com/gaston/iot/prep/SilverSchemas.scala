@@ -18,10 +18,10 @@ object SilverSchemas {
   ))
 
   val readingSchema: StructType = StructType(Seq(
-    StructField("chip_id", IntegerType, nullable = true),
-    StructField("altitude", LongType, nullable = true),
-    StructField("pressure", LongType, nullable = true),
-    StructField("temperature", ArrayType(LongType), nullable = true),
+    StructField("chip_id", StringType, nullable = true),
+    StructField("altitude", DoubleType, nullable = true),
+    StructField("pressure", DoubleType, nullable = true),
+    StructField("temperature", ArrayType(DoubleType), nullable = true),
     StructField("location", StringType, nullable = true)
   ))
 

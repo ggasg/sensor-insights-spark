@@ -11,6 +11,7 @@ object AppConfig {
   // Kafka
   val kafkaBootstrap: String = config.getString("kafka.bootstrap.servers")
   val kafkaTopic: String = config.getString("kafka.topic")
+  val anomaliesTopic: String = config.getString("kafka.anomalies_topic")
 
   // MinIO
   val minioEndpoint: String = config.getString("minio.endpoint")

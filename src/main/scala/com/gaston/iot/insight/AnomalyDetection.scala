@@ -81,9 +81,11 @@ object AnomalyDetection {
           .filter(col("event_timestamp") > current_timestamp() - expr("INTERVAL 6 HOURS"))
           .limit(1000)
 
+        // Notice this creates a static DF, cannot be sent to Kafka as stream
         val combinedData = recentData.union(batchDF)
         val anomalies = detectAnomalies(combinedData)
           .filter(col("is_anomaly") === true)
+          .drop("is_anomaly", "loc", "org", "postal", "timezone", "readme")
 
         anomalies.write
             .format("delta")

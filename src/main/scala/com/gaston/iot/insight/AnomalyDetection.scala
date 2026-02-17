@@ -13,57 +13,47 @@ object AnomalyDetection {
   private val logger = LoggerFactory.getLogger(getClass)
 
   private[iot] def detectAnomalies(df: DataFrame): DataFrame = {
-    // Window with partitioning. Not really in use since there's only one chip id
-    val sensorWindowSpec = Window
-      .partitionBy("chip_id")
-      .orderBy("event_timestamp")
+    val sensorWindow = Window.partitionBy("chip_id").orderBy("event_timestamp")
 
-    // Add features: lag and measurement diffs
+    // Add features
     val features = df
       .withColumn("temp_c", element_at(col("temperature"), lit(1)))
-      .withColumn("temp_f", element_at(col("temperature"), lit(1)))
-      .withColumn("prev_temp_c", lag("temp_c", 1).over(sensorWindowSpec))
+      .withColumn("temp_f", element_at(col("temperature"), lit(2)))
+      .withColumn("prev_temp_c", lag("temp_c", 1).over(sensorWindow))
       .withColumn("temp_change_rate", col("temp_c") - col("prev_temp_c"))
-      .withColumn("pressure_change_rate", col("pressure") - lag("pressure", 1).over(sensorWindowSpec))
+      .withColumn("pressure_change_rate", col("pressure") - lag("pressure", 1).over(sensorWindow))
       .na.fill(0.0)
 
-    // Assemble
     val assembler = new VectorAssembler()
       .setInputCols(Array("temp_c", "pressure", "altitude", "temp_change_rate", "pressure_change_rate"))
       .setOutputCol("features")
 
     val featurized = assembler.transform(features)
 
-    // Anomaly detection via just plain old stats
-    // Calculate stats - handle nulls properly
-    val stats = featurized.select(
-      mean("temp_c").alias("mean_temp"),
-      stddev("temp_c").alias("stddev_temp"),
-      mean("pressure").alias("mean_pressure"),
-      stddev("pressure").alias("stddev_pressure")
-    ).first()
-
-    // Safe extraction with null handling
-    val meanTemp = if (stats.isNullAt(0)) 0.0 else stats.getDouble(0)
-    val stddevTemp = if (stats.isNullAt(1) || stats.getDouble(1) == 0.0) 1.0 else stats.getDouble(1)
-    val meanPressure = if (stats.isNullAt(2)) 0.0 else stats.getDouble(2)
-    val stddevPressure = if (stats.isNullAt(3) || stats.getDouble(3) == 0.0) 1.0 else stats.getDouble(3)
-
-    // Flag values > 3 std devs
+    // Anomaly detection based on thresholds and rate of change
     featurized
-      .withColumn("temp_zscore", abs((col("temp_c") - lit(meanTemp)) / lit(stddevTemp)))
-      .withColumn("pressure_zscore", abs((col("pressure") - lit(meanPressure)) / lit(stddevPressure)))
       .withColumn("is_anomaly",
-        when(col("temp_zscore") > 3.0 || col("pressure_zscore") > 3.0, lit(true))
-          .otherwise(lit(false))
+        when(
+          // Sudden jumps
+          (abs(col("temp_change_rate")) > 3.0) ||
+            (abs(col("pressure_change_rate")) > 15.0) ||
+            // Invalid values
+            (col("temp_c") < -50.0) || (col("temp_c") > 100.0) ||
+            (col("pressure") < 800.0) || (col("pressure") > 1200.0) ||
+            (col("temp_c") === 0.0) || (col("pressure") === 0.0) ||
+            // Negative values
+            (col("temp_c") < 0.0) || (col("pressure") < 0.0),
+          lit(true)
+        ).otherwise(lit(false))
       )
   }
 
   def startAnomalyDetectionStream(
-                                 spark: SparkSession,
-                                 silverTable: String,
-                                 outputTable: String,
+                                   spark: SparkSession,
+                                   silverTable: String,
+                                   outputTable: String
                                  ): StreamingQuery = {
+
     logger.info("Starting anomaly detection stream")
 
     spark.readStream
@@ -73,25 +63,39 @@ object AnomalyDetection {
       .foreachBatch { (batchDF: DataFrame, batchId: Long) =>
         logger.info(s"Processing batch $batchId for anomaly detection")
 
-        logger.debug(s"Batch columns: ${batchDF.columns.mkString(", ")}")
+        // Mark new batch records
+        val batchMarked = batchDF.withColumn("is_new_batch", lit(true))
 
+        // Read recent history for better context
         val recentData = spark.read
           .format("delta")
           .load(silverTable)
           .filter(col("event_timestamp") > current_timestamp() - expr("INTERVAL 6 HOURS"))
           .limit(1000)
+          .withColumn("is_new_batch", lit(false))
 
-        // Notice this creates a static DF, cannot be sent to Kafka as stream
-        val combinedData = recentData.union(batchDF)
-        val anomalies = detectAnomalies(combinedData)
+        // Combine for detection
+        val combinedData = recentData.union(batchMarked)
+        val allResults = detectAnomalies(combinedData)
+
+        // Filter to only new batch records that are anomalies
+        val anomalies = allResults
+          .filter(col("is_new_batch") === true)
           .filter(col("is_anomaly") === true)
-          .drop("is_anomaly", "loc", "org", "postal", "timezone", "readme")
+          .drop("is_new_batch")
 
-        anomalies.write
+        val anomalyCount = anomalies.count()
+        logger.info(s"Batch $batchId: Found $anomalyCount anomalies in new data")
+
+        // Save to Delta if anomalies found
+        if (anomalyCount > 0) {
+          anomalies.write
             .format("delta")
             .mode("append")
             .save(outputTable)
+        }
       }
+      .trigger(org.apache.spark.sql.streaming.Trigger.ProcessingTime("10 seconds"))
       .option("checkpointLocation", s"${AppConfig.checkpointLocation}/anomalies")
       .start()
   }

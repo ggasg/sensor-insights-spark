@@ -46,6 +46,7 @@ class JobProcessing(sparkSession: SparkSession) {
         ).alias("temperature"),
         col("parsed_location.*")  // Flatten location fields
       )
+      .drop("readme")
   }
 
   def processSilver(bronzeTable: String): DataFrame = {
@@ -56,8 +57,7 @@ class JobProcessing(sparkSession: SparkSession) {
   }
 
   private[iot] def computeWindowAverages(df: DataFrame): DataFrame = {
-    df.withColumn("ts", (col("event_timestamp").cast("long") / 1e9).cast("timestamp"))
-      .groupBy(window(col("ts"), "5 minutes"))
+    df.groupBy(window(col("event_timestamp"), "5 minutes"))
       .agg(
         avg(element_at(col("temperature"), lit(1))).alias("avg_c"),
         avg(element_at(col("temperature"), lit(2))).alias("avg_f"),

@@ -39,15 +39,16 @@ class TransformationTests extends AnyFunSuite with SharedSparkContext with Match
   }
 
   test("Should compute 5-minute window averages correctly") {
-    val baseTime = 1000000000000000000L
-    val oneMinuteNs = 60L * 1000000000L
-    val fiveMinutesNs = 300L * 1000000000L
+    import java.sql.Timestamp
+
+    // Use actual timestamp values like in your silver table
+    val baseTime = Timestamp.valueOf("2026-02-17 14:00:00")
 
     val testData = Seq(
-      (baseTime, Array(20.0, 68.0), 100.0, 1013.0),                      // Window 1
-      (baseTime + oneMinuteNs, Array(22.0, 71.6), 105.0, 1012.0),        // Window 1 (1 min later)
-      (baseTime + fiveMinutesNs, Array(25.0, 77.0), 110.0, 1011.0),      // Window 2 (5 min later)
-      (baseTime + 2 * fiveMinutesNs, Array(28.0, 82.4), 115.0, 1010.0)   // Window 3 (10 min later)
+      (baseTime, Array(20.0, 68.0), 100.0, 1013.0),                                           // Window 1: 14:00:00
+      (Timestamp.valueOf("2026-02-17 14:01:00"), Array(22.0, 71.6), 105.0, 1012.0),          // Window 1: 14:01:00 (same window)
+      (Timestamp.valueOf("2026-02-17 14:05:00"), Array(25.0, 77.0), 110.0, 1011.0),          // Window 2: 14:05:00 (new window)
+      (Timestamp.valueOf("2026-02-17 14:10:00"), Array(28.0, 82.4), 115.0, 1010.0)           // Window 3: 14:10:00 (new window)
     ).toDF("event_timestamp", "temperature", "altitude", "pressure")
 
     val jobProcessing = new JobProcessing(spark)

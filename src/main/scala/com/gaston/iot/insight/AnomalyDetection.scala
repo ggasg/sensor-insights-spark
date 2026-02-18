@@ -15,7 +15,6 @@ object AnomalyDetection {
   private[iot] def detectAnomalies(df: DataFrame): DataFrame = {
     val sensorWindow = Window.partitionBy("chip_id").orderBy("event_timestamp")
 
-    // Add features
     val features = df
       .withColumn("temp_c", element_at(col("temperature"), lit(1)))
       .withColumn("temp_f", element_at(col("temperature"), lit(2)))
@@ -24,14 +23,8 @@ object AnomalyDetection {
       .withColumn("pressure_change_rate", col("pressure") - lag("pressure", 1).over(sensorWindow))
       .na.fill(0.0)
 
-    val assembler = new VectorAssembler()
-      .setInputCols(Array("temp_c", "pressure", "altitude", "temp_change_rate", "pressure_change_rate"))
-      .setOutputCol("features")
-
-    val featurized = assembler.transform(features)
-
     // Anomaly detection based on thresholds and rate of change
-    featurized
+    features
       .withColumn("is_anomaly",
         when(
           // Sudden jumps

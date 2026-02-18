@@ -11,8 +11,14 @@ import org.slf4j.LoggerFactory
 object AnomalyDetection {
 
   private val logger = LoggerFactory.getLogger(getClass)
-
-  private[iot] def detectAnomalies(df: DataFrame): DataFrame = {
+  /**
+   * Given a DF with the entire population of measurements, flag those readings with a temperature
+   * change rate greater than 3.0 degrees, or pressure greater than 15.0. Also account for physically invalid values,
+   * as well as negative values outside of the sensor's capabilities.
+   * @param df Input DataFrame
+   * @return DataFrame with records flagged as anomaly = true or false
+   */
+  private[iot] def detectAnomaliesRateChange(df: DataFrame): DataFrame = {
     val sensorWindow = Window.partitionBy("chip_id").orderBy("event_timestamp")
 
     val features = df
@@ -23,14 +29,16 @@ object AnomalyDetection {
       .withColumn("pressure_change_rate", col("pressure") - lag("pressure", 1).over(sensorWindow))
       .na.fill(0.0)
 
-    // Anomaly detection based on thresholds and rate of change
     features
       .withColumn("is_anomaly",
         when(
-          // Sudden jumps
+          // Sudden jumps compared with previous reading (sensor malfunction)
           (abs(col("temp_change_rate")) > 3.0) ||
             (abs(col("pressure_change_rate")) > 15.0) ||
-            // Invalid values
+            // Sustained anomalies (outside normal range)
+            (col("temp_c") < 18.0) || (col("temp_c") > 23.0) ||
+            (col("pressure") < 1005.0) || (col("pressure") > 1018.0) ||
+            // Impossible values
             (col("temp_c") < -50.0) || (col("temp_c") > 100.0) ||
             (col("pressure") < 800.0) || (col("pressure") > 1200.0) ||
             (col("temp_c") === 0.0) || (col("pressure") === 0.0) ||
@@ -41,6 +49,12 @@ object AnomalyDetection {
       )
   }
 
+  /** Set up the Anomaly Detection Streaming Query. Focus on current batch only
+   * @param spark Just your Spark Session since this is a top level method for your Spark Job
+   * @param silverTable Source Table Name (e.g. "sensor_readings_silver")
+   * @param outputTable Output Table Name (e.g. "sensor_anomalies")
+   * @return Streaming Query to be handled in your Spark Job
+   */
   def startAnomalyDetectionStream(
                                    spark: SparkSession,
                                    silverTable: String,
@@ -56,10 +70,9 @@ object AnomalyDetection {
       .foreachBatch { (batchDF: DataFrame, batchId: Long) =>
         logger.info(s"Processing batch $batchId for anomaly detection")
 
+        // TODO --- Not in use since we're focusing on the current batch
         // Mark new batch records
         val batchMarked = batchDF.withColumn("is_new_batch", lit(true))
-
-        // Read recent history for better context
         val recentData = spark.read
           .format("delta")
           .load(silverTable)
@@ -67,22 +80,30 @@ object AnomalyDetection {
           .limit(1000)
           .withColumn("is_new_batch", lit(false))
 
-        // Combine for detection
         val combinedData = recentData.union(batchMarked)
-        val allResults = detectAnomalies(combinedData)
+        // -- End Not in use
+
+        val allResults = detectAnomaliesRateChange(batchDF)
 
         // Filter to only new batch records that are anomalies
         val anomalies = allResults
-          .filter(col("is_new_batch") === true)
+//          .filter(col("is_new_batch") === true)
           .filter(col("is_anomaly") === true)
-          .drop("is_new_batch")
 
         val anomalyCount = anomalies.count()
-        logger.info(s"Batch $batchId: Found $anomalyCount anomalies in new data")
+
+        if (logger.isDebugEnabled()) {
+          allResults.cache()
+          logger.debug(s"Total anomalies detected: ${allResults.filter(col("is_anomaly") === true).count()}")
+          logger.debug(s"New anomalies to save: ${allResults.filter(col("is_new_batch") === true && col("is_anomaly") === true).count()}")
+          allResults.unpersist()
+        }
 
         // Save to Delta if anomalies found
         if (anomalyCount > 0) {
-          anomalies.write
+          anomalies
+//            .drop("is_new_batch")
+            .write
             .format("delta")
             .mode("append")
             .save(outputTable)

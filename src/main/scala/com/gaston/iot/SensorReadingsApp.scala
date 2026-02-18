@@ -3,7 +3,7 @@ package com.gaston.iot
 import com.gaston.iot.config.AppConfig
 import com.gaston.iot.insight.AnomalyDetection
 import com.gaston.iot.prep.JobProcessing
-import org.apache.spark.sql.{SparkSession}
+import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
 
 object SensorReadingsApp {
@@ -24,7 +24,7 @@ object SensorReadingsApp {
     val spark = builder.getOrCreate()
 
     spark.sparkContext.setLogLevel("WARN")
-    val logger = LoggerFactory.getLogger(SensorReadingsApp.getClass.getName)
+    val logger = LoggerFactory.getLogger(getClass)
 
     val jobProcessing = new JobProcessing(spark)
 

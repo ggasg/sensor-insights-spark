@@ -1,4 +1,6 @@
 .DS_Store
+src/main/resources/app.conf
+.claude
 
 target/
 !.mvn/wrapper/maven-wrapper.jar
